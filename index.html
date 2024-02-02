@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+    <h1>
+       Screen capture using browser API
+    </h1>
+
+    <p>
+        <button id="start">Start Capture</button>&nbsp;<button id="stop">
+            Stop Capture
+        </button>&nbsp;<button id="download" disabled>Download</button>
+    </p>
+
+    <video id="video" autoplay></video>
+    <br />
+
+
+    <script>
+        const videoElem = document.getElementById("video");
+        const logElem = document.getElementById("log");
+        const startElem = document.getElementById("start");
+        const stopElem = document.getElementById("stop");
+        const downloadElem = document.getElementById("download");
+
+        let mediaRecorder;
+        let recordedChunks = [];
+
+        // Options for getDisplayMedia()
+
+        const displayMediaOptions = {
+            video: {
+                displaySurface: "window",
+            },
+            audio: false,
+        };
+
+        // Set event listeners for the start, stop, and download buttons
+        startElem.addEventListener(
+            "click",
+            (evt) => {
+                startCapture();
+            },
+            false,
+        );
+
+        stopElem.addEventListener(
+            "click",
+            (evt) => {
+                stopCapture();
+            },
+            false,
+        );
+
+        downloadElem.addEventListener(
+            "click",
+            (evt) => {
+                downloadCapture();
+            },
+            false,
+        );
+
+        async function startCapture() {
+
+            try {
+                const stream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+                videoElem.srcObject = stream;
+               
+
+                // Initialize MediaRecorder
+                mediaRecorder = new MediaRecorder(stream);
+
+                // Event listener for dataavailable event
+                mediaRecorder.ondataavailable = handleDataAvailable;
+
+                // Start recording
+                mediaRecorder.start();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function stopCapture(evt) {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+        }
+
+        function handleDataAvailable(event) {
+            if (event.data.size > 0) {
+                recordedChunks.push(event.data);
+                downloadElem.disabled = false; // Enable download button
+            }
+        }
+
+        function downloadCapture() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'captured_video.webm';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        }
+
+       
+
+    </script>
+</body>
+
+</html>
